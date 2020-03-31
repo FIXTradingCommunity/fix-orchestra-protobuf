@@ -3,10 +3,44 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.jandj.protogen</groupId>
+    <groupId>io.fixprotocol</groupId>
     <artifactId>orchestra2proto</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
+    <name>${project.groupId}:${project.artifactId}</name>
+    <description>Translators from FIX Orchestra to the protobuf family of serializations</description>
+    <url>https://github.com/FIXTradingCommunity/fix-orchestra-protobuf</url>
+    <inceptionYear>2019</inceptionYear>
+    <prerequisites>
+        <maven>3.0.5</maven>
+    </prerequisites>
+
+    <organization>
+        <name>FIX Trading Community</name>
+        <url>http://https://www.fixtrading.org/</url>
+    </organization>
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>Greg Malatestinic</name>
+            <email>gmala@jandj.com</email>
+            <organization>FIX Trading Community</organization>
+            <organizationUrl>https://www.fixtrading.org/</organizationUrl>
+        </developer>
+    </developers>
+    <scm>
+        <developerConnection>scm:git:ssh://git@github.com/FIXTradingCommunity/fix-orchestra-protobuf.git</developerConnection>
+        <url>https://github.com/FIXTradingCommunity/fix-orchestra-protobuf</url>
+    </scm>
+    <issueManagement>
+        <system>GitHub</system>
+        <url>http://github.com/FIXTradingCommunity/fix-orchestra-protobuf/issues</url>
+    </issueManagement>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
