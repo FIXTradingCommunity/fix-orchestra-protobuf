@@ -16,24 +16,23 @@
 package io.fixprotocol.orchestra2proto;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Arrays;
-
-import io.fixprotocol._2016.fixrepository.CodeSetType;
-import io.fixprotocol._2016.fixrepository.CodeSets;
-import io.fixprotocol._2016.fixrepository.CodeType;
-import io.fixprotocol._2016.fixrepository.ComponentRefType;
-import io.fixprotocol._2016.fixrepository.ComponentType;
-import io.fixprotocol._2016.fixrepository.Components;
-import io.fixprotocol._2016.fixrepository.FieldRefType;
-import io.fixprotocol._2016.fixrepository.FieldType;
-import io.fixprotocol._2016.fixrepository.GroupRefType;
-import io.fixprotocol._2016.fixrepository.GroupType;
-import io.fixprotocol._2016.fixrepository.MessageType;
-import io.fixprotocol._2016.fixrepository.Messages;
-import io.fixprotocol._2016.fixrepository.Repository;
-import io.fixprotocol._2016.fixrepository.UnionDataTypeT;
-import io.fixprotocol._2016.fixrepository.MessageType.Structure;
+import java.util.List;
+import io.fixprotocol._2020.orchestra.repository.CodeSetType;
+import io.fixprotocol._2020.orchestra.repository.CodeSets;
+import io.fixprotocol._2020.orchestra.repository.CodeType;
+import io.fixprotocol._2020.orchestra.repository.ComponentRefType;
+import io.fixprotocol._2020.orchestra.repository.ComponentType;
+import io.fixprotocol._2020.orchestra.repository.Components;
+import io.fixprotocol._2020.orchestra.repository.FieldRefType;
+import io.fixprotocol._2020.orchestra.repository.FieldType;
+import io.fixprotocol._2020.orchestra.repository.GroupRefType;
+import io.fixprotocol._2020.orchestra.repository.GroupType;
+import io.fixprotocol._2020.orchestra.repository.MessageType;
+import io.fixprotocol._2020.orchestra.repository.MessageType.Structure;
+import io.fixprotocol._2020.orchestra.repository.Messages;
+import io.fixprotocol._2020.orchestra.repository.Repository;
+import io.fixprotocol._2020.orchestra.repository.UnionDataTypeT;
 import io.fixprotocol.orchestra2proto.capnp.Annotation;
 import io.fixprotocol.orchestra2proto.capnp.AnnotationDecl;
 import io.fixprotocol.orchestra2proto.capnp.CapnpModel;
@@ -130,7 +129,7 @@ public class CapnpModelFactory extends ModelFactory {
 		 * Build proto messages from the FIX components.
 		 */
 		Components components = repo.getComponents();
-		List<ComponentType> componentTypes = components.getComponentOrGroup();
+		List<ComponentType> componentTypes = components.getComponent();
 		for(ComponentType componentType : componentTypes) {
 			Message protoMsg = buildMessage(componentType);
 			protoMsg.homePackage = componentType.getCategory();
@@ -251,7 +250,7 @@ public class CapnpModelFactory extends ModelFactory {
 		if(message.getMsgType() != null)
 			protoMsg.annotations.add(new Annotation("msgTypeValue", message.getMsgType(), Annotation.ValueType.QUOTED_STRING));
 		Structure msgStructure = message.getStructure();
-		List<Object> msgItems = msgStructure.getComponentOrComponentRefOrGroup();
+		List<Object> msgItems = msgStructure.getComponentRefOrGroupRefOrFieldRef();
 		for(Object msgItem : msgItems) {
 			MessageField protoField = null;
 			if(msgItem instanceof ComponentRefType) {
@@ -283,12 +282,12 @@ public class CapnpModelFactory extends ModelFactory {
 	}
 	
 	private MessageField buildField(GroupRefType groupRef) {
-		ComponentType component = componentMap.get(groupRef.getId()); // note that component Map contains groups as components
-		MessageField protoField = new MessageField(component.getName());
+		GroupType group = groupMap.get(groupRef.getId());
+		MessageField protoField = new MessageField(group.getName());
 		protoField.isRepeating = true;
 		protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 		
-		protoField.typeName = component.getName();
+		protoField.typeName = group.getName();
 				
 		if(groupRef.getAdded() != null) {
 			String s = groupRef.getAdded();
@@ -302,9 +301,9 @@ public class CapnpModelFactory extends ModelFactory {
 			String s = groupRef.getDeprecated();
 			protoField.annotations.add(new Annotation("fieldDeprecated", s, Annotation.ValueType.QUOTED_STRING)); //Annotation.ValueType.ENUM_LITERAL));
 		}
-		GroupType group = (GroupType) component;
-		if(group.getNumInGroupId() != null) {
-			String s = group.getNumInGroupId().toString();
+		final FieldRefType numInGroup = group.getNumInGroup();
+        if(numInGroup!= null) {
+			String s = numInGroup.getId().toString();
 			protoField.annotations.add(new Annotation("groupTag", s, Annotation.ValueType.NUMERIC));
 		}
 		return protoField;
@@ -341,7 +340,7 @@ public class CapnpModelFactory extends ModelFactory {
 		 */
 		if(codeSetMap.containsKey(field.getType())) {
 			CodeSetType codeSet = codeSetMap.get(field.getType());
-			protoField.name = fieldRef.getName();
+			protoField.name = getFieldName(fieldRef);
 			protoField.typeName = codeSet.getName();
 			protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoEnum;
 			protoField.isRepeating = codeSet.getType().equals("MultipleCharValue") || codeSet.getType().equals("MultipleStringValue");
@@ -355,14 +354,14 @@ public class CapnpModelFactory extends ModelFactory {
 		 */
 		else {
 			if(field.getType().equals("int")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.scalarType = ScalarType.INT32;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("TagNum")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.scalarType = ScalarType.INT32;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
@@ -372,78 +371,78 @@ public class CapnpModelFactory extends ModelFactory {
 				return null;
 			}
 			else if(field.getType().equals("SeqNum")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.scalarType = ScalarType.INT32;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("Length")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.scalarType = ScalarType.INT32;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("DayOfMonth")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.scalarType = ScalarType.INT32;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("float")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.typeName = "Decimal32"; // this will depend on enc attrs
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("Qty")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.typeName = "Decimal32"; // this will depend on enc attrs
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("Price")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.typeName = "Decimal32"; // this will depend on enc attrs
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("PriceOffset")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.typeName = "Decimal32"; // this will depend on enc attrs
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("Amt")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.typeName = "Decimal32"; // this will depend on enc attrs
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("Percentage")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.typeName = "Decimal32"; // this will depend on enc attrs
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("char")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.scalarType = ScalarType.DATA;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("Boolean")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.scalarType = ScalarType.BOOL;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("String")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.scalarType = ScalarType.TEXT;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
@@ -451,121 +450,121 @@ public class CapnpModelFactory extends ModelFactory {
 			}
 			else if(field.getType().equals("MultipleCharValue")) {
 				// This case never occurs.
-				logger.info(fieldRef.getName() + " is a MultipleCharValue");
+				logger.info(getFieldName(fieldRef) + " is a MultipleCharValue");
 			}
 			else if(field.getType().equals("MultipleStringValue")) {
 				// This case never occurs.
-				logger.info(fieldRef.getName() + " is a MultipleStringValue");
+				logger.info(getFieldName(fieldRef) + " is a MultipleStringValue");
 			}
 			else if(field.getType().equals("Country")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.scalarType = ScalarType.TEXT;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("Currency")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.scalarType = ScalarType.TEXT;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("Exchange")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.scalarType = ScalarType.TEXT;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("MonthYear")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.scalarType = ScalarType.INT32;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("UTCTimestamp")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.typeName = "Timestamp";
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("UTCTimeOnly")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.typeName = "TimeOnly";
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("UTCDateOnly")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.scalarType = ScalarType.INT32;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("LocalMktDate")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.scalarType = ScalarType.INT32;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("TZTimeOnly")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.typeName = "LocalTimeOnly";
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("TZTimestamp")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.typeName = "LocalTimestamp";
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("data")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.scalarType = ScalarType.TEXT;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("Pattern")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.scalarType = ScalarType.TEXT;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("Tenor")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.typeName = "Tenor"; // this will depend on enc attrs
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("XMLData")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.scalarType = ScalarType.TEXT;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("Language")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.scalarType = ScalarType.TEXT;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("XID")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.scalarType = ScalarType.TEXT;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("XIDRef")) {
-				protoField.name = fieldRef.getName();
+				protoField.name = getFieldName(fieldRef);
 				protoField.scalarType = ScalarType.TEXT;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
@@ -611,7 +610,7 @@ public class CapnpModelFactory extends ModelFactory {
 			UnionDataTypeT unionType = field.getUnionDataType();
 			if(unionType == UnionDataTypeT.QTY) {
 				protoField = new MessageField();
-				protoField.name = fieldRef.getName() + unionType.value();
+				protoField.name = getFieldName(fieldRef) + unionType.value();
 				protoField.typeName = "Decimal32";
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 				protoField.isRepeating = false;
@@ -620,7 +619,7 @@ public class CapnpModelFactory extends ModelFactory {
 					unionType == UnionDataTypeT.RESERVED_100_PLUS ||
 					unionType == UnionDataTypeT.RESERVED_4000_PLUS) {
 				protoField = new MessageField();
-				protoField.name = fieldRef.getName() + unionType.value();
+				protoField.name = getFieldName(fieldRef) + unionType.value();
 				protoField.scalarType = ScalarType.INT32;
 				protoField.typeName = protoField.scalarType.toString();
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoScalar;
@@ -628,7 +627,7 @@ public class CapnpModelFactory extends ModelFactory {
 			}
 			else if(unionType == UnionDataTypeT.TENOR) {
 				protoField = new MessageField();
-				protoField.name = fieldRef.getName() + unionType.value();
+				protoField.name = getFieldName(fieldRef) + unionType.value();
 				protoField.typeName = "Tenor"; // this will depend on enc attrs
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 				protoField.isRepeating = false;

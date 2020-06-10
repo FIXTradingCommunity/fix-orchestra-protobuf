@@ -15,18 +15,18 @@
 
 package io.fixprotocol.orchestra2proto;
 
+import java.util.Comparator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import io.fixprotocol.orchestra2proto.protobuf.EnumField;
 import io.fixprotocol.orchestra2proto.protobuf.Field;
 import io.fixprotocol.orchestra2proto.protobuf.MessageField;
 import io.fixprotocol.orchestra2proto.protobuf.Option;
 
-import java.util.Comparator;
-
-import org.apache.log4j.Logger;
 
 class FieldComparator implements Comparator<Field> /*, Comparator<capnp_model.FieldField> */ {
 	
-	static Logger logger = Logger.getLogger(FieldComparator.class);
+	static Logger logger = LogManager.getLogger(FieldComparator.class);
 	
 	public enum SortOrder {
 		BY_SPEC,
