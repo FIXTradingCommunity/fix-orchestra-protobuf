@@ -44,9 +44,9 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <repository2016.version>1.2.0-RC3</repository2016.version>
+        <orchestra.version>1.6.1</orchestra.version>
         <commons-cli.version>1.4</commons-cli.version>
-        <log4j.version>1.2.17</log4j.version>
+        <log4j.version>2.13.3</log4j.version>
         <jaxb-api.version>2.3.1</jaxb-api.version>
         <jaxb-core.version>2.3.0.1</jaxb-core.version>
         <jaxb-impl.version>2.3.2</jaxb-impl.version>
@@ -58,19 +58,24 @@
     <dependencies>
         <dependency>
             <groupId>io.fixprotocol.orchestra</groupId>
-            <artifactId>repository2016</artifactId>
-            <version>${repository2016.version}</version>
+            <artifactId>repository</artifactId>
+            <version>${orchestra.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-cli</groupId>
             <artifactId>commons-cli</artifactId>
             <version>${commons-cli.version}</version>
         </dependency>
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>${log4j.version}</version>
-        </dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-api</artifactId>
+			<version>${log4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>${log4j.version}</version>
+		</dependency>
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>

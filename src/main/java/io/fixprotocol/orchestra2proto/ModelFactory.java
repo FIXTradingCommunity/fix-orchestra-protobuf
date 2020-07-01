@@ -15,28 +15,28 @@
 
 package io.fixprotocol.orchestra2proto;
 
-import io.fixprotocol._2016.fixrepository.CodeSetType;
-import io.fixprotocol._2016.fixrepository.CodeSets;
-import io.fixprotocol._2016.fixrepository.Repository;
-import io.fixprotocol._2016.fixrepository.MessageType;
-import io.fixprotocol._2016.fixrepository.MessageType.Structure;
-import io.fixprotocol._2016.fixrepository.ComponentType;
-import io.fixprotocol._2016.fixrepository.Components;
-import io.fixprotocol._2016.fixrepository.FieldRefType;
-import io.fixprotocol._2016.fixrepository.FieldType;
-import io.fixprotocol._2016.fixrepository.GroupType;
-import io.fixprotocol._2016.fixrepository.Datatype;
-
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.math.BigInteger;
-
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import io.fixprotocol._2020.orchestra.repository.CodeSetType;
+import io.fixprotocol._2020.orchestra.repository.CodeSets;
+import io.fixprotocol._2020.orchestra.repository.ComponentType;
+import io.fixprotocol._2020.orchestra.repository.Components;
+import io.fixprotocol._2020.orchestra.repository.Datatype;
+import io.fixprotocol._2020.orchestra.repository.FieldRefType;
+import io.fixprotocol._2020.orchestra.repository.FieldType;
+import io.fixprotocol._2020.orchestra.repository.GroupType;
+import io.fixprotocol._2020.orchestra.repository.Groups;
+import io.fixprotocol._2020.orchestra.repository.MessageType;
+import io.fixprotocol._2020.orchestra.repository.MessageType.Structure;
+import io.fixprotocol._2020.orchestra.repository.Repository;
 
 abstract class ModelFactory {
 	
-	static Logger logger = Logger.getLogger(ModelFactory.class);
+	static Logger logger = LogManager.getLogger(ModelFactory.class);
 	
 	protected Repository repo;
 	protected CodegenSettings codegenSettings;
@@ -47,11 +47,8 @@ abstract class ModelFactory {
 	protected Map<BigInteger, FieldType> fieldMap;
 	protected Map<String, CodeSetType> codeSetMap;
 	protected Map<String, String> codeSetCategoryMap;
-	/*
-	 * The component map contain all components whether they are ComponentTypes or GroupTypes.
-	 * Recall that GroupType extends ComponentType.
-	 */
 	protected Map<BigInteger, ComponentType> componentMap;
+	protected Map<BigInteger, GroupType> groupMap;
 	
 	protected FieldComparator fieldCmp;
 	
@@ -105,17 +102,16 @@ abstract class ModelFactory {
 		}
 		componentMap = new HashMap<BigInteger, ComponentType>();
 		Components components = repo.getComponents();
-		List<ComponentType> componentTypes = components.getComponentOrGroup();
+		List<ComponentType> componentTypes = components.getComponent();
 		for(ComponentType componentType : componentTypes) {
 			componentMap.put(componentType.getId(), componentType);
-			if(componentType instanceof GroupType) {
-				GroupType gt = (GroupType)componentType;
-				BigInteger idGrp = gt.getId();
-				BigInteger idComp = componentType.getId();
-				if(!idGrp.equals(idComp))
-					logger.warn("GroupType ID (" + idGrp.toString() + ") does not equal ComponentType ID (" + idComp.toString() + ")");
-			}
 		}
+		groupMap = new HashMap<BigInteger, GroupType>();
+        Groups groups = repo.getGroups();
+        List<GroupType> groupTypes = groups.getGroup();
+        for(GroupType groupType : groupTypes) {
+            groupMap.put(groupType.getId(), groupType);
+        }
 		
 		/*
 		 * We'll want to know what file to place the CodeSets into. This will be helpful when we are generating the output and need to
@@ -155,7 +151,7 @@ abstract class ModelFactory {
 		}
 		for(MessageType message : repo.getMessages().getMessage()) {
 			Structure msgStructure = message.getStructure();
-			List<Object> msgItems = msgStructure.getComponentOrComponentRefOrGroup();
+			List<Object> msgItems = msgStructure.getComponentRefOrGroupRefOrFieldRef();
 			for(Object obj : msgItems) {
 				if(obj instanceof FieldRefType) {
 					FieldRefType fieldRef = (FieldRefType) obj;
@@ -190,4 +186,13 @@ abstract class ModelFactory {
 	}
 
 	protected abstract IModel buildModel();
+	
+    protected String getFieldName(FieldRefType fieldRef) {
+      FieldType field = fieldMap.get(fieldRef.getId());
+      if (field != null) {
+        return field.getName();
+      } else {
+        return "";
+      }
+    }
 }

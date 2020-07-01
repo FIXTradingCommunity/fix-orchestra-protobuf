@@ -16,20 +16,18 @@
 package io.fixprotocol.orchestra2proto;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
-import java.io.File;
 import java.io.IOException;
-import java.util.Map;
 import java.util.List;
-
+import java.util.Map;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 //import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.util.ValidationEventCollector;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -37,14 +35,13 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Logger;
-
-import io.fixprotocol._2016.fixrepository.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import io.fixprotocol._2020.orchestra.repository.Repository;
 
 public class ProtoGen {
 	
-	static Logger logger = Logger.getLogger(ProtoGen.class);
+	static Logger logger = LogManager.getLogger(ProtoGen.class);
 	
 	public Map<String, StringBuilder> generateProtos(String repoFileName, CodegenSettings settings)
 			throws FileNotFoundException, IOException, JAXBException
@@ -70,8 +67,6 @@ public class ProtoGen {
 	}
 	
 	public static void main(String[] args) {
-		
-		BasicConfigurator.configure();
 		
 		CodegenSettings codegenSettings = new CodegenSettings();
 		String outputPath = "./";
