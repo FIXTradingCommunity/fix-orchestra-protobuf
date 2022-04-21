@@ -48,7 +48,7 @@ public class ProtoGen {
 	{
 		Repository rootElement = null;
 		ValidationEventCollector evHandler = new JAXBValidator();
-		JAXBContext jc = JAXBContext.newInstance("io.fixprotocol._2016.fixrepository");
+		JAXBContext jc = JAXBContext.newInstance("io.fixprotocol._2020.orchestra.repository");
 		Unmarshaller unmarshaller = jc.createUnmarshaller();
 		unmarshaller.setEventHandler(evHandler);
 		FileInputStream fis = new FileInputStream(repoFileName);

@@ -193,9 +193,18 @@ public class ProtobufModelFactory extends ModelFactory {
 			protoEnum.name = toProtoEnumName(codeSet.getName());
 			List<EnumField> fields = new ArrayList<EnumField>();
 			for(CodeType codeType : codeSet.getCode()) {
+				String sort = codeType.getSort();
+				if(sort == null || sort == "") {
+					sort = codeType.getValue();
+					logger.error(String.format("sort is blank: CodeType: name='%s', id='%d', value='%s', sort='%s'", codeType.getName(), codeType.getId(), codeType.getValue(), codeType.getSort()));
+				}
+				if(sort != sort.trim()) {
+					logger.error(String.format("unexpected whitespace in attribute: CodeType: name='%s', id='%d', value='%s', sort='%s'", codeType.getName(), codeType.getId(), codeType.getValue(), codeType.getSort()));
+					sort = sort.trim();
+				}
 				EnumField f = new EnumField();
 				f.fieldName = toProtoEnumFieldName(codeSet.getName(), codeType.getName());
-				f.fieldNum = Integer.parseInt(codeType.getSort()); // for now
+				f.fieldNum = Integer.parseInt(sort); // for now
 				if(codeType.getAdded() != null) {
 					String added = toVersionFieldName(codeType.getAdded());
 					f.fieldOptions.add(new Option("enum_added", added, Option.ValueType.ENUM_LITERAL));
@@ -232,11 +241,11 @@ public class ProtobufModelFactory extends ModelFactory {
 			List<Object> msgItems = component.getComponentRefOrGroupRefOrFieldRef();
 			for(Object msgItem : msgItems) {
 				MessageField protoField = null;
-				if(msgItem instanceof ComponentRefType) {
-					if(msgItem instanceof GroupRefType)
-						protoField = buildField((GroupRefType) msgItem);
-					else
-						protoField = buildField((ComponentRefType) msgItem);
+				if(msgItem instanceof GroupRefType) {
+					protoField = buildField((GroupRefType) msgItem);
+				}
+				else if(msgItem instanceof ComponentRefType) {
+					protoField = buildField((ComponentRefType) msgItem);
 				}
 				else if(msgItem instanceof FieldRefType) {
 					protoField = buildField((FieldRefType) msgItem);
@@ -249,6 +258,9 @@ public class ProtobufModelFactory extends ModelFactory {
 						}
 					}
 				}
+				else {
+					logger.error("unknown type: " + msgItem);
+				}
 				if(protoField != null) {
 					protoMsg.fields.add(protoField);
 				}
@@ -260,6 +272,7 @@ public class ProtobufModelFactory extends ModelFactory {
 		}
 		
 		private Message buildMessage(MessageType message) {
+			logger.debug(String.format("Message: name='%s'", message.getName()));
 			Message protoMsg = new Message();
 			protoMsg.name = message.getName();
 			if(message.getMsgType() != null)
@@ -268,13 +281,13 @@ public class ProtobufModelFactory extends ModelFactory {
 			List<Object> msgItems = msgStructure.getComponentRefOrGroupRefOrFieldRef();
 			for(Object msgItem : msgItems) {
 				MessageField protoField = null;
-				if(msgItem instanceof ComponentRefType) {		
-				  protoField = buildField((ComponentRefType) msgItem);
+				if(msgItem instanceof GroupRefType) {
+					protoField = buildField((GroupRefType) msgItem);
 				}
-				else if(msgItem instanceof GroupRefType) {
-                  protoField = buildField((GroupRefType) msgItem);
+				else if(msgItem instanceof ComponentRefType) {		
+					protoField = buildField((ComponentRefType) msgItem);
 				}
-                else if(msgItem instanceof FieldRefType) {
+				else if(msgItem instanceof FieldRefType) {
 					protoField = buildField((FieldRefType) msgItem);
 					if(hasUnionType((FieldRefType) msgItem)) {
 						MessageField altField = buildAltUnionField((FieldRefType) msgItem);
@@ -284,6 +297,9 @@ public class ProtobufModelFactory extends ModelFactory {
 							protoMsg.nestedOneOfs.put(protoField.fieldName + "_union", unionList);
 						}
 					}
+				}
+				else {
+					logger.error("unknown type: " + msgItem);
 				}
 				if(protoField != null)
 					protoMsg.fields.add(protoField);
@@ -321,6 +337,12 @@ public class ProtobufModelFactory extends ModelFactory {
 		
 		private MessageField buildField(ComponentRefType componentRef) {
 			ComponentType component = componentMap.get(componentRef.getId());
+			if(component == null) {
+				logger.error(String.format("ComponentType is null: ComponentRefType: id='%d'", componentRef.getId()));
+			}
+			else {
+				logger.debug(String.format("Component: name='%s', id='%d'", component.getName(), component.getId()));
+			}
 			MessageField protoField = new MessageField(component.getName(), toProtoFieldName(component.getName()));
 			protoField.isRepeating = false;
 			protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
