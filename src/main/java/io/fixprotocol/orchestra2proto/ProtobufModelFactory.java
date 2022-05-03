@@ -31,6 +31,7 @@ import io.fixprotocol._2020.orchestra.repository.FieldRefType;
 import io.fixprotocol._2020.orchestra.repository.FieldType;
 import io.fixprotocol._2020.orchestra.repository.GroupRefType;
 import io.fixprotocol._2020.orchestra.repository.GroupType;
+import io.fixprotocol._2020.orchestra.repository.Groups;
 import io.fixprotocol._2020.orchestra.repository.MessageType;
 import io.fixprotocol._2020.orchestra.repository.MessageType.Structure;
 import io.fixprotocol._2020.orchestra.repository.Messages;
@@ -168,6 +169,16 @@ public class ProtobufModelFactory extends ModelFactory {
 			protoSchema.messages.add(protoMsg);
 		}
 		/*
+		 * Build proto messages from the FIX groups
+		 */
+		Groups groups = repo.getGroups();
+		List<GroupType> groupTypes = groups.getGroup();
+		for(GroupType groupType : groupTypes) {
+			Message protoMsg = buildMessage(groupType);
+			protoMsg.homePackage = groupType.getCategory();
+			protoSchema.messages.add(protoMsg);
+		}
+		/*
 		 * Build the supporting messages.
 		 */
 		protoSchema.messages.add(buildDecimal32());
@@ -234,6 +245,27 @@ public class ProtobufModelFactory extends ModelFactory {
 			}
 			return protoEnum;
 		}
+
+	private Message buildMessage(GroupType group) {
+		Message protoMsg = new Message();
+		protoMsg.name = group.getName();
+
+		List<Object> msgItems = group.getComponentRefOrGroupRefOrFieldRef();
+		for(Object msgItem : msgItems) {
+			MessageField protoField = null;
+			if(msgItem instanceof GroupRefType) {
+				protoField = buildField((GroupRefType) msgItem);
+			}
+			if (protoField != null) {
+				protoMsg.fields.add(protoField);
+			}
+		}
+		Collections.sort(protoMsg.fields, fieldCmp);
+		for(int i=0; i<protoMsg.fields.size(); i++)
+			protoMsg.fields.get(i).fieldNum = i+1;
+		return protoMsg;
+
+	}
 		
 		private Message buildMessage(ComponentType component) {
 			Message protoMsg = new Message();
