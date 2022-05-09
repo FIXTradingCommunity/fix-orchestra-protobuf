@@ -216,6 +216,12 @@ public class ProtobufModelFactory extends ModelFactory {
 				EnumField f = new EnumField();
 				f.fieldName = toProtoEnumFieldName(codeSet.getName(), codeType.getName());
 				f.fieldNum = Integer.parseInt(sort); // for now
+
+				// "UNSPECIFIED" is a reserved default enum value for the generated protos, must make value unique
+				if(f.fieldName.contains("_UNSPECIFIED")) {
+					f.fieldName = f.fieldName + "_VALUE";
+				}
+
 				if(codeType.getAdded() != null) {
 					String added = toVersionFieldName(codeType.getAdded());
 					f.fieldOptions.add(new Option("enum_added", added, Option.ValueType.ENUM_LITERAL));
@@ -227,6 +233,8 @@ public class ProtobufModelFactory extends ModelFactory {
 				if(codeType.getDeprecated() != null) {
 					String s = toVersionFieldName(codeType.getDeprecated());
 					f.fieldOptions.add(new Option("enum_deprecated", s, Option.ValueType.ENUM_LITERAL));
+					// Deprecations may cause enum value duplication for the generated protos, must make values unique
+					f.fieldName = f.fieldName + "_DEPRECATED";
 				}
 				if(codeType.getValue() != null) {
 					String s = codeType.getValue();
