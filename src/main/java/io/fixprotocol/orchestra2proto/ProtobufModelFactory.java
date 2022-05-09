@@ -890,7 +890,8 @@ public class ProtobufModelFactory extends ModelFactory {
 					"FIX_5_0",
 					"FIXT_1_1",
 					"FIX_5_0SP1",
-					"FIX_5_0SP2"
+					"FIX_5_0SP2",
+					"FIX_LATEST"
 			);
 			Enum protoEnum = new Enum();
 			String codeSetName = "Version"; // mock-up a code set name so we can build like the other enums.
