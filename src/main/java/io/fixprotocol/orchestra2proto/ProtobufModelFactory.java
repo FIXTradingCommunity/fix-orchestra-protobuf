@@ -139,13 +139,7 @@ public class ProtobufModelFactory extends ModelFactory {
 		List<CodeSetType> codeSetTypes = codeSets.getCodeSet();
 		for(CodeSetType codeSetType : codeSetTypes) {
 			Enum protoEnum = buildEnum(codeSetType);
-			if(codeSetCategoryMap.containsKey(codeSetType.getName())) {
-				String pkgName = codeSetCategoryMap.get(codeSetType.getName());
-				protoEnum.homePackage = pkgName;
-			}
-			else {
-				protoEnum.homePackage = null;
-			}
+			protoEnum.homePackage = codegenSettings.useAltOutputPackaging ? "supporting-messages" : "fix";
 			protoSchema.enums.add(protoEnum);
 		}
 		/*
