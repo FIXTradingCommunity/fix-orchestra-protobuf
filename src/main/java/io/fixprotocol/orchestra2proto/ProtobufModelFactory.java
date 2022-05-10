@@ -259,15 +259,7 @@ public class ProtobufModelFactory extends ModelFactory {
 		protoMsg.name = group.getName();
 
 		List<Object> msgItems = group.getComponentRefOrGroupRefOrFieldRef();
-		for(Object msgItem : msgItems) {
-			MessageField protoField = null;
-			if(msgItem instanceof GroupRefType) {
-				protoField = buildField((GroupRefType) msgItem);
-			}
-			if (protoField != null) {
-				protoMsg.fields.add(protoField);
-			}
-		}
+		processMessageItems(protoMsg, msgItems);
 		Collections.sort(protoMsg.fields, fieldCmp);
 		for(int i=0; i<protoMsg.fields.size(); i++)
 			protoMsg.fields.get(i).fieldNum = i+1;
@@ -279,6 +271,29 @@ public class ProtobufModelFactory extends ModelFactory {
 			Message protoMsg = new Message();
 			protoMsg.name = component.getName();
 			List<Object> msgItems = component.getComponentRefOrGroupRefOrFieldRef();
+			processMessageItems(protoMsg, msgItems);
+			Collections.sort(protoMsg.fields, fieldCmp);
+			for(int i=0; i<protoMsg.fields.size(); i++)
+				protoMsg.fields.get(i).fieldNum = i+1;
+			return protoMsg;
+		}
+		
+		private Message buildMessage(MessageType message) {
+			logger.debug(String.format("Message: name='%s'", message.getName()));
+			Message protoMsg = new Message();
+			protoMsg.name = message.getName();
+			if(message.getMsgType() != null)
+				protoMsg.options.add(new Option("msg_type_value", message.getMsgType(), Option.ValueType.QUOTED_STRING));
+			Structure msgStructure = message.getStructure();
+			List<Object> msgItems = msgStructure.getComponentRefOrGroupRefOrFieldRef();
+			processMessageItems(protoMsg, msgItems);
+			Collections.sort(protoMsg.fields, fieldCmp);
+			for(int i=0; i<protoMsg.fields.size(); i++)
+				protoMsg.fields.get(i).fieldNum = i+1;
+			return protoMsg;
+		}
+
+		private Message processMessageItems(Message protoMsg, List<Object> msgItems) {
 			for(Object msgItem : msgItems) {
 				MessageField protoField = null;
 				if(msgItem instanceof GroupRefType) {
@@ -305,48 +320,6 @@ public class ProtobufModelFactory extends ModelFactory {
 					protoMsg.fields.add(protoField);
 				}
 			}
-			Collections.sort(protoMsg.fields, fieldCmp);
-			for(int i=0; i<protoMsg.fields.size(); i++)
-				protoMsg.fields.get(i).fieldNum = i+1;
-			return protoMsg;
-		}
-		
-		private Message buildMessage(MessageType message) {
-			logger.debug(String.format("Message: name='%s'", message.getName()));
-			Message protoMsg = new Message();
-			protoMsg.name = message.getName();
-			if(message.getMsgType() != null)
-				protoMsg.options.add(new Option("msg_type_value", message.getMsgType(), Option.ValueType.QUOTED_STRING));
-			Structure msgStructure = message.getStructure();
-			List<Object> msgItems = msgStructure.getComponentRefOrGroupRefOrFieldRef();
-			for(Object msgItem : msgItems) {
-				MessageField protoField = null;
-				if(msgItem instanceof GroupRefType) {
-					protoField = buildField((GroupRefType) msgItem);
-				}
-				else if(msgItem instanceof ComponentRefType) {		
-					protoField = buildField((ComponentRefType) msgItem);
-				}
-				else if(msgItem instanceof FieldRefType) {
-					protoField = buildField((FieldRefType) msgItem);
-					if(hasUnionType((FieldRefType) msgItem)) {
-						MessageField altField = buildAltUnionField((FieldRefType) msgItem);
-						if(altField != null) {
-							protoMsg.fields.add(altField);
-							List<MessageField> unionList = new ArrayList<MessageField>(Arrays.asList(protoField, altField));
-							protoMsg.nestedOneOfs.put(protoField.fieldName + "_union", unionList);
-						}
-					}
-				}
-				else {
-					logger.error("unknown type: " + msgItem);
-				}
-				if(protoField != null)
-					protoMsg.fields.add(protoField);
-			}
-			Collections.sort(protoMsg.fields, fieldCmp);
-			for(int i=0; i<protoMsg.fields.size(); i++)
-				protoMsg.fields.get(i).fieldNum = i+1;
 			return protoMsg;
 		}
 		
