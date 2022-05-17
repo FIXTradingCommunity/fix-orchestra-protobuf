@@ -437,13 +437,13 @@ public class ProtobufModelFactory extends ModelFactory {
 				}
 				else if(field.getType().equals("Qty")) {
 					protoField.fieldName = toProtoFieldName(getFieldName(fieldRef));
-					protoField.typeName = "Decimal32"; // this will depend on enc attrs
+					protoField.typeName = "Decimal64"; // this will depend on enc attrs
 					protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 					protoField.isRepeating = false;
 				}
 				else if(field.getType().equals("Price")) {
 					protoField.fieldName = toProtoFieldName(getFieldName(fieldRef));
-					protoField.typeName = "Decimal32"; // this will depend on enc attrs
+					protoField.typeName = "Decimal64"; // this will depend on enc attrs
 					protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 					protoField.isRepeating = false;
 				}
