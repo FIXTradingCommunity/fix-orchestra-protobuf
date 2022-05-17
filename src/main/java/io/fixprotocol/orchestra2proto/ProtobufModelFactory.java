@@ -651,7 +651,7 @@ public class ProtobufModelFactory extends ModelFactory {
 				if(unionType == UnionDataTypeT.QTY) {
 					protoField = new MessageField();
 					protoField.fieldName = toProtoFieldName(getFieldName(fieldRef) + unionType.value());
-					protoField.typeName = "Decimal32";
+					protoField.typeName = "Decimal64";
 					protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 					protoField.isRepeating = false;
 				}
