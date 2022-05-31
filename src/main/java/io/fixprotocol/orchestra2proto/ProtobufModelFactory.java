@@ -31,6 +31,7 @@ import io.fixprotocol._2020.orchestra.repository.FieldRefType;
 import io.fixprotocol._2020.orchestra.repository.FieldType;
 import io.fixprotocol._2020.orchestra.repository.GroupRefType;
 import io.fixprotocol._2020.orchestra.repository.GroupType;
+import io.fixprotocol._2020.orchestra.repository.Groups;
 import io.fixprotocol._2020.orchestra.repository.MessageType;
 import io.fixprotocol._2020.orchestra.repository.MessageType.Structure;
 import io.fixprotocol._2020.orchestra.repository.Messages;
@@ -138,13 +139,7 @@ public class ProtobufModelFactory extends ModelFactory {
 		List<CodeSetType> codeSetTypes = codeSets.getCodeSet();
 		for(CodeSetType codeSetType : codeSetTypes) {
 			Enum protoEnum = buildEnum(codeSetType);
-			if(codeSetCategoryMap.containsKey(codeSetType.getName())) {
-				String pkgName = codeSetCategoryMap.get(codeSetType.getName());
-				protoEnum.homePackage = pkgName;
-			}
-			else {
-				protoEnum.homePackage = null;
-			}
+			protoEnum.homePackage = codegenSettings.useAltOutputPackaging ? "supporting-messages" : "fix";
 			protoSchema.enums.add(protoEnum);
 		}
 		/*
@@ -165,6 +160,16 @@ public class ProtobufModelFactory extends ModelFactory {
 		for(MessageType messageType : messageTypes) {
 			Message protoMsg = buildMessage(messageType);
 			protoMsg.homePackage = messageType.getCategory();
+			protoSchema.messages.add(protoMsg);
+		}
+		/*
+		 * Build proto messages from the FIX groups
+		 */
+		Groups groups = repo.getGroups();
+		List<GroupType> groupTypes = groups.getGroup();
+		for(GroupType groupType : groupTypes) {
+			Message protoMsg = buildMessage(groupType);
+			protoMsg.homePackage = groupType.getCategory();
 			protoSchema.messages.add(protoMsg);
 		}
 		/*
@@ -205,6 +210,12 @@ public class ProtobufModelFactory extends ModelFactory {
 				EnumField f = new EnumField();
 				f.fieldName = toProtoEnumFieldName(codeSet.getName(), codeType.getName());
 				f.fieldNum = Integer.parseInt(sort); // for now
+
+				// "UNSPECIFIED" is a reserved default enum value for the generated protos, must make value unique
+				if(f.fieldName.contains("_UNSPECIFIED")) {
+					f.fieldName = f.fieldName + "_VALUE";
+				}
+
 				if(codeType.getAdded() != null) {
 					String added = toVersionFieldName(codeType.getAdded());
 					f.fieldOptions.add(new Option("enum_added", added, Option.ValueType.ENUM_LITERAL));
@@ -216,6 +227,8 @@ public class ProtobufModelFactory extends ModelFactory {
 				if(codeType.getDeprecated() != null) {
 					String s = toVersionFieldName(codeType.getDeprecated());
 					f.fieldOptions.add(new Option("enum_deprecated", s, Option.ValueType.ENUM_LITERAL));
+					// Deprecations may cause enum value duplication for the generated protos, must make values unique
+					f.fieldName = f.fieldName + "_DEPRECATED";
 				}
 				if(codeType.getValue() != null) {
 					String s = codeType.getValue();
@@ -234,11 +247,47 @@ public class ProtobufModelFactory extends ModelFactory {
 			}
 			return protoEnum;
 		}
+
+	private Message buildMessage(GroupType group) {
+		Message protoMsg = new Message();
+		protoMsg.name = group.getName();
+
+		List<Object> msgItems = group.getComponentRefOrGroupRefOrFieldRef();
+		processMessageItems(protoMsg, msgItems);
+		Collections.sort(protoMsg.fields, fieldCmp);
+		for(int i=0; i<protoMsg.fields.size(); i++)
+			protoMsg.fields.get(i).fieldNum = i+1;
+		return protoMsg;
+
+	}
 		
 		private Message buildMessage(ComponentType component) {
 			Message protoMsg = new Message();
 			protoMsg.name = component.getName();
 			List<Object> msgItems = component.getComponentRefOrGroupRefOrFieldRef();
+			processMessageItems(protoMsg, msgItems);
+			Collections.sort(protoMsg.fields, fieldCmp);
+			for(int i=0; i<protoMsg.fields.size(); i++)
+				protoMsg.fields.get(i).fieldNum = i+1;
+			return protoMsg;
+		}
+		
+		private Message buildMessage(MessageType message) {
+			logger.debug(String.format("Message: name='%s'", message.getName()));
+			Message protoMsg = new Message();
+			protoMsg.name = message.getName();
+			if(message.getMsgType() != null)
+				protoMsg.options.add(new Option("msg_type_value", message.getMsgType(), Option.ValueType.QUOTED_STRING));
+			Structure msgStructure = message.getStructure();
+			List<Object> msgItems = msgStructure.getComponentRefOrGroupRefOrFieldRef();
+			processMessageItems(protoMsg, msgItems);
+			Collections.sort(protoMsg.fields, fieldCmp);
+			for(int i=0; i<protoMsg.fields.size(); i++)
+				protoMsg.fields.get(i).fieldNum = i+1;
+			return protoMsg;
+		}
+
+		private Message processMessageItems(Message protoMsg, List<Object> msgItems) {
 			for(Object msgItem : msgItems) {
 				MessageField protoField = null;
 				if(msgItem instanceof GroupRefType) {
@@ -265,48 +314,6 @@ public class ProtobufModelFactory extends ModelFactory {
 					protoMsg.fields.add(protoField);
 				}
 			}
-			Collections.sort(protoMsg.fields, fieldCmp);
-			for(int i=0; i<protoMsg.fields.size(); i++)
-				protoMsg.fields.get(i).fieldNum = i+1;
-			return protoMsg;
-		}
-		
-		private Message buildMessage(MessageType message) {
-			logger.debug(String.format("Message: name='%s'", message.getName()));
-			Message protoMsg = new Message();
-			protoMsg.name = message.getName();
-			if(message.getMsgType() != null)
-				protoMsg.options.add(new Option("msg_type_value", message.getMsgType(), Option.ValueType.QUOTED_STRING));
-			Structure msgStructure = message.getStructure();
-			List<Object> msgItems = msgStructure.getComponentRefOrGroupRefOrFieldRef();
-			for(Object msgItem : msgItems) {
-				MessageField protoField = null;
-				if(msgItem instanceof GroupRefType) {
-					protoField = buildField((GroupRefType) msgItem);
-				}
-				else if(msgItem instanceof ComponentRefType) {		
-					protoField = buildField((ComponentRefType) msgItem);
-				}
-				else if(msgItem instanceof FieldRefType) {
-					protoField = buildField((FieldRefType) msgItem);
-					if(hasUnionType((FieldRefType) msgItem)) {
-						MessageField altField = buildAltUnionField((FieldRefType) msgItem);
-						if(altField != null) {
-							protoMsg.fields.add(altField);
-							List<MessageField> unionList = new ArrayList<MessageField>(Arrays.asList(protoField, altField));
-							protoMsg.nestedOneOfs.put(protoField.fieldName + "_union", unionList);
-						}
-					}
-				}
-				else {
-					logger.error("unknown type: " + msgItem);
-				}
-				if(protoField != null)
-					protoMsg.fields.add(protoField);
-			}
-			Collections.sort(protoMsg.fields, fieldCmp);
-			for(int i=0; i<protoMsg.fields.size(); i++)
-				protoMsg.fields.get(i).fieldNum = i+1;
 			return protoMsg;
 		}
 		
@@ -430,13 +437,13 @@ public class ProtobufModelFactory extends ModelFactory {
 				}
 				else if(field.getType().equals("Qty")) {
 					protoField.fieldName = toProtoFieldName(getFieldName(fieldRef));
-					protoField.typeName = "Decimal32"; // this will depend on enc attrs
+					protoField.typeName = "Decimal64"; // this will depend on enc attrs
 					protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 					protoField.isRepeating = false;
 				}
 				else if(field.getType().equals("Price")) {
 					protoField.fieldName = toProtoFieldName(getFieldName(fieldRef));
-					protoField.typeName = "Decimal32"; // this will depend on enc attrs
+					protoField.typeName = "Decimal64"; // this will depend on enc attrs
 					protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 					protoField.isRepeating = false;
 				}
@@ -644,7 +651,7 @@ public class ProtobufModelFactory extends ModelFactory {
 				if(unionType == UnionDataTypeT.QTY) {
 					protoField = new MessageField();
 					protoField.fieldName = toProtoFieldName(getFieldName(fieldRef) + unionType.value());
-					protoField.typeName = "Decimal32";
+					protoField.typeName = "Decimal64";
 					protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 					protoField.isRepeating = false;
 				}
@@ -850,7 +857,8 @@ public class ProtobufModelFactory extends ModelFactory {
 					"FIX_5_0",
 					"FIXT_1_1",
 					"FIX_5_0SP1",
-					"FIX_5_0SP2"
+					"FIX_5_0SP2",
+					"FIX_LATEST"
 			);
 			Enum protoEnum = new Enum();
 			String codeSetName = "Version"; // mock-up a code set name so we can build like the other enums.

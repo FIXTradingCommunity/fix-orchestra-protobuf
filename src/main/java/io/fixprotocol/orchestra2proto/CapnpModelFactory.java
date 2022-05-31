@@ -399,13 +399,13 @@ public class CapnpModelFactory extends ModelFactory {
 			}
 			else if(field.getType().equals("Qty")) {
 				protoField.name = getFieldName(fieldRef);
-				protoField.typeName = "Decimal32"; // this will depend on enc attrs
+				protoField.typeName = "Decimal64"; // this will depend on enc attrs
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 				protoField.isRepeating = false;
 			}
 			else if(field.getType().equals("Price")) {
 				protoField.name = getFieldName(fieldRef);
-				protoField.typeName = "Decimal32"; // this will depend on enc attrs
+				protoField.typeName = "Decimal64"; // this will depend on enc attrs
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 				protoField.isRepeating = false;
 			}
@@ -611,7 +611,7 @@ public class CapnpModelFactory extends ModelFactory {
 			if(unionType == UnionDataTypeT.QTY) {
 				protoField = new MessageField();
 				protoField.name = getFieldName(fieldRef) + unionType.value();
-				protoField.typeName = "Decimal32";
+				protoField.typeName = "Decimal64";
 				protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 				protoField.isRepeating = false;
 			}
