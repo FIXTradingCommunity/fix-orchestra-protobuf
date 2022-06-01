@@ -140,8 +140,8 @@ public class ProtobufModel implements IModel {
 							String itemPkg = item.homePackage;
 							if(!itemPkg.equals(msg.homePackage)) {
 								String itemFileName = itemPkg.toLowerCase() + ".proto";
-								if(!f.requiredImports.contains(itemFileName))
-									f.requiredImports.add(itemFileName);
+								if(!f.requiredImports.contains("fix/" + itemFileName))
+									f.requiredImports.add("fix/" + itemFileName);
 							}	
 						}
 					}
@@ -153,8 +153,8 @@ public class ProtobufModel implements IModel {
 							String itemPkg = item.homePackage;
 							if(!itemPkg.equals(msg.homePackage)) {
 								String itemFileName = itemPkg.toLowerCase() + ".proto";
-								if(!f.requiredImports.contains(itemFileName))
-									f.requiredImports.add(itemFileName);
+								if(!f.requiredImports.contains("fix/" + itemFileName))
+									f.requiredImports.add("fix/" + itemFileName);
 							}	
 						}
 					}
@@ -171,8 +171,8 @@ public class ProtobufModel implements IModel {
 									String efPkg = ext.homePackage;
 									if(!efPkg.equals(msg.homePackage)) {
 										String itemFileName = efPkg.toLowerCase() + ".proto";
-										if(!f.requiredImports.contains(itemFileName))
-											f.requiredImports.add(itemFileName);
+										if(!f.requiredImports.contains("fix/" + itemFileName))
+											f.requiredImports.add("fix/" + itemFileName);
 									}	
 								}
 							}
@@ -205,8 +205,8 @@ public class ProtobufModel implements IModel {
 									String efPkg = ext.homePackage;
 									if(!efPkg.equals(e.homePackage)) {
 										String itemFileName = efPkg.toLowerCase() + ".proto";
-										if(!f.requiredImports.contains(itemFileName))
-											f.requiredImports.add(itemFileName);
+										if(!f.requiredImports.contains("fix/" + itemFileName))
+											f.requiredImports.add("fix/" + itemFileName);
 									}	
 								}
 							}

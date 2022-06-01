@@ -101,8 +101,8 @@ public class CapnpModel implements IModel {
 							if(!itemPkg.equals(msg.homePackage)) {
 								String itemFileName = itemPkg.toLowerCase() + fileSfx;
 								String itemName = "\"" + itemFileName + "\"" + "." + msgRefName;
-								if(!f.requiredImports.contains(itemName))
-									f.requiredImports.add(itemName);
+								if(!f.requiredImports.contains("fix/" + itemName))
+									f.requiredImports.add("fix/" + itemName);
 							}	
 						}
 					}
@@ -115,8 +115,8 @@ public class CapnpModel implements IModel {
 							if(!itemPkg.equals(msg.homePackage)) {
 								String itemFileName = itemPkg.toLowerCase() + fileSfx;
 								String itemName = "\"" + itemFileName + "\"" + "." + enumRefName;						
-								if(!f.requiredImports.contains(itemName))
-									f.requiredImports.add(itemName);		
+								if(!f.requiredImports.contains("fix/" + itemName))
+									f.requiredImports.add("fix/" + itemName);
 							}	
 						}
 					}
@@ -131,8 +131,8 @@ public class CapnpModel implements IModel {
 								if(!annDecl.homePackage.equals(msg.homePackage)) {
 									String itemFileName = annDecl.homePackage.toLowerCase() + fileSfx;
 									String itemName = "\"" + itemFileName + "\"" + "." + ann.name;						
-									if(!f.requiredImports.contains(itemName))
-										f.requiredImports.add(itemName);
+									if(!f.requiredImports.contains("fix/" + itemName))
+										f.requiredImports.add("fix/" + itemName);
 								}
 							}
 						}
@@ -149,8 +149,8 @@ public class CapnpModel implements IModel {
 							if(!annDecl.homePackage.equals(msg.homePackage)) {
 								String itemFileName = annDecl.homePackage.toLowerCase() + fileSfx;
 								String itemName = "\"" + itemFileName + "\"" + "." + ann.name;						
-								if(!f.requiredImports.contains(itemName))
-									f.requiredImports.add(itemName);
+								if(!f.requiredImports.contains("fix/" + itemName))
+									f.requiredImports.add("fix/" + itemName);
 							}
 						}
 					}
@@ -183,8 +183,8 @@ public class CapnpModel implements IModel {
 								if(!annDecl.homePackage.equals(e.homePackage)) {
 									String itemFileName = annDecl.homePackage.toLowerCase() + fileSfx;
 									String itemName = "\"" + itemFileName + "\"" + "." + ann.name;						
-									if(!f.requiredImports.contains(itemName))
-										f.requiredImports.add(itemName);
+									if(!f.requiredImports.contains("fix/" + itemName))
+										f.requiredImports.add("fix/" + itemName);
 								}
 							}
 						}
