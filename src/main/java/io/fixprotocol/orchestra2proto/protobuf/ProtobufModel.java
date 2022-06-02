@@ -46,7 +46,9 @@ public class ProtobufModel implements IModel {
 	public List<Extension> extensions;	// Extension defined at the global scope. Primary use is to facilitate custom fieldOptions.
 	
 	//public String packageName; // we should set this equal to repoName
-	
+
+	private final String fix = "fix/";
+
 	public ProtobufModel(String repoName, Syntax syntax) {
 		this.syntax = syntax;
 		this.repoName = repoName;
@@ -140,8 +142,8 @@ public class ProtobufModel implements IModel {
 							String itemPkg = item.homePackage;
 							if(!itemPkg.equals(msg.homePackage)) {
 								String itemFileName = itemPkg.toLowerCase() + ".proto";
-								if(!f.requiredImports.contains("fix/" + itemFileName))
-									f.requiredImports.add("fix/" + itemFileName);
+								if(!f.requiredImports.contains(fix + itemFileName))
+									f.requiredImports.add(fix + itemFileName);
 							}	
 						}
 					}
@@ -153,8 +155,8 @@ public class ProtobufModel implements IModel {
 							String itemPkg = item.homePackage;
 							if(!itemPkg.equals(msg.homePackage)) {
 								String itemFileName = itemPkg.toLowerCase() + ".proto";
-								if(!f.requiredImports.contains("fix/" + itemFileName))
-									f.requiredImports.add("fix/" + itemFileName);
+								if(!f.requiredImports.contains(fix + itemFileName))
+									f.requiredImports.add(fix + itemFileName);
 							}	
 						}
 					}
@@ -171,8 +173,8 @@ public class ProtobufModel implements IModel {
 									String efPkg = ext.homePackage;
 									if(!efPkg.equals(msg.homePackage)) {
 										String itemFileName = efPkg.toLowerCase() + ".proto";
-										if(!f.requiredImports.contains("fix/" + itemFileName))
-											f.requiredImports.add("fix/" + itemFileName);
+										if(!f.requiredImports.contains(fix + itemFileName))
+											f.requiredImports.add(fix + itemFileName);
 									}	
 								}
 							}
@@ -205,8 +207,8 @@ public class ProtobufModel implements IModel {
 									String efPkg = ext.homePackage;
 									if(!efPkg.equals(e.homePackage)) {
 										String itemFileName = efPkg.toLowerCase() + ".proto";
-										if(!f.requiredImports.contains("fix/" + itemFileName))
-											f.requiredImports.add("fix/" + itemFileName);
+										if(!f.requiredImports.contains(fix + itemFileName))
+											f.requiredImports.add(fix + itemFileName);
 									}	
 								}
 							}
