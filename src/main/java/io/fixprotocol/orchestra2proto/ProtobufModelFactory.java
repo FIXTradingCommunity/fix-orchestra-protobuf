@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import io.fixprotocol._2020.orchestra.repository.CodeSetType;
 import io.fixprotocol._2020.orchestra.repository.CodeSets;
 import io.fixprotocol._2020.orchestra.repository.CodeType;
@@ -192,6 +193,25 @@ public class ProtobufModelFactory extends ModelFactory {
 		
 		return protoSchema;
 	}
+
+	private boolean containsName(final List<EnumField> list, final String name) {
+		return list.stream().anyMatch(o -> Objects.equals(o.fieldName, name));
+	}
+
+	private List<EnumField> addEnumVal(final List<EnumField> list, final String name, final String s) {
+		// This function adds additional enum values to already existing fields for the case of when a proto can be one of multiple values
+		list.stream().filter(o -> Objects.equals(o.fieldName, name)).forEach(
+				o -> {
+					o.fieldOptions.stream().filter(a -> Objects.equals(a.name, "enum_value")).forEach(
+							a -> {
+								a.value += "," + s;
+							}
+					);
+				}
+		);
+
+		return list;
+	}
 		
 		private Enum buildEnum(CodeSetType codeSet) {
 			Enum protoEnum = new Enum();
@@ -232,9 +252,16 @@ public class ProtobufModelFactory extends ModelFactory {
 				}
 				if(codeType.getValue() != null) {
 					String s = codeType.getValue();
-					f.fieldOptions.add(new Option("enum_value", s, Option.ValueType.QUOTED_STRING));
+					// check if already added -- append to enum value if so
+					if(containsName(fields, f.fieldName)) {
+						fields = addEnumVal(fields, f.fieldName, s);
+					} else {
+						f.fieldOptions.add(new Option("enum_value", s, Option.ValueType.QUOTED_STRING));
+					}
 				}
-				fields.add(f);
+				if (!containsName(fields, f.fieldName)) {
+					fields.add(f);
+				}
 			}
 			FieldComparator fieldComparator = new FieldComparator(FieldComparator.SortOrder.NONE);
 			Collections.sort(fields, fieldComparator);
