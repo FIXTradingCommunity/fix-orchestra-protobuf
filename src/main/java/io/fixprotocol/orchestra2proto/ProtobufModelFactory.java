@@ -458,7 +458,7 @@ public class ProtobufModelFactory extends ModelFactory {
 				}
 				else if(field.getType().equals("float")) {
 					protoField.fieldName = toProtoFieldName(getFieldName(fieldRef));
-					protoField.typeName = "Decimal32"; // this will depend on enc attrs
+					protoField.typeName = "Decimal64"; // this will depend on enc attrs
 					protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 					protoField.isRepeating = false;
 				}
@@ -476,19 +476,19 @@ public class ProtobufModelFactory extends ModelFactory {
 				}
 				else if(field.getType().equals("PriceOffset")) {
 					protoField.fieldName = toProtoFieldName(getFieldName(fieldRef));
-					protoField.typeName = "Decimal32"; // this will depend on enc attrs
+					protoField.typeName = "Decimal64"; // this will depend on enc attrs
 					protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 					protoField.isRepeating = false;
 				}
 				else if(field.getType().equals("Amt")) {
 					protoField.fieldName = toProtoFieldName(getFieldName(fieldRef));
-					protoField.typeName = "Decimal32"; // this will depend on enc attrs
+					protoField.typeName = "Decimal64"; // this will depend on enc attrs
 					protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 					protoField.isRepeating = false;
 				}
 				else if(field.getType().equals("Percentage")) {
 					protoField.fieldName = toProtoFieldName(getFieldName(fieldRef));
-					protoField.typeName = "Decimal32"; // this will depend on enc attrs
+					protoField.typeName = "Decimal64"; // this will depend on enc attrs
 					protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 					protoField.isRepeating = false;
 				}
