@@ -93,6 +93,7 @@ public class ProtobufModelFactory extends ModelFactory {
 			ext.addField(new ExtensionField("TimeUnitFieldOption", "time_unit", 50011));
 			ext.addField(new ExtensionField("EpochFieldOption", "epoch", 50012));
 			ext.addField(new ExtensionField(ScalarType.STRING, "abbr_name", 50013));
+			ext.addField(new ExtensionField(ScalarType.STRING, "base_abbr_name", 50014));
 			ext.homePackage = "extended-gpb-options";
 			protoSchema.extensions.add(ext);
 				
@@ -113,6 +114,7 @@ public class ProtobufModelFactory extends ModelFactory {
 			ext.addField(new ExtensionField(ScalarType.FIXED32, "group_tag", 50009));
 			ext.addField(new ExtensionField("Datatype", "type", 50010));
 			ext.addField(new ExtensionField(ScalarType.STRING, "abbr_name", 50011));
+			ext.addField(new ExtensionField(ScalarType.STRING, "base_abbr_name", 50012));
 			ext.homePackage = "fix";
 			protoSchema.extensions.add(ext);
 
@@ -668,6 +670,9 @@ public class ProtobufModelFactory extends ModelFactory {
 			if (field.getAbbrName() != null) {
 				protoField.fieldOptions.add(new Option("abbr_name", field.getAbbrName(), Option.ValueType.QUOTED_STRING));
 			}
+			if (field.getBaseCategoryAbbrName() != null) {
+				protoField.fieldOptions.add(new Option("base_abbr_name", field.getBaseCategoryAbbrName(), Option.ValueType.QUOTED_STRING));
+			}
 			return protoField;
 		}
 
@@ -730,6 +735,9 @@ public class ProtobufModelFactory extends ModelFactory {
 					}
 					if (field.getAbbrName() != null) {
 						protoField.fieldOptions.add(new Option("abbr_name", field.getAbbrName(), Option.ValueType.QUOTED_STRING));
+					}
+					if (field.getBaseCategoryAbbrName() != null) {
+						protoField.fieldOptions.add(new Option("base_abbr_name", field.getBaseCategoryAbbrName(), Option.ValueType.QUOTED_STRING));
 					}
 				}
 				else {
