@@ -399,6 +399,9 @@ public class ProtobufModelFactory extends ModelFactory {
 				String s = toVersionFieldName(componentRef.getDeprecated());
 				protoField.fieldOptions.add(new Option("field_deprecated", s, Option.ValueType.ENUM_LITERAL));
 			}
+			if(component.getAbbrName() != null) {
+				protoField.fieldOptions.add(new Option("abbr_name", component.getAbbrName(), Option.ValueType.QUOTED_STRING));
+			}
 			return protoField;
 		}
 		
