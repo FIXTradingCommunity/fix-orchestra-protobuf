@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import io.fixprotocol._2020.orchestra.repository.CodeSetType;
 import io.fixprotocol._2020.orchestra.repository.CodeSets;
 import io.fixprotocol._2020.orchestra.repository.CodeType;
@@ -91,6 +92,8 @@ public class ProtobufModelFactory extends ModelFactory {
 			ext.addField(new ExtensionField("Datatype", "type", 50010));
 			ext.addField(new ExtensionField("TimeUnitFieldOption", "time_unit", 50011));
 			ext.addField(new ExtensionField("EpochFieldOption", "epoch", 50012));
+			ext.addField(new ExtensionField(ScalarType.STRING, "abbr_name", 50013));
+			ext.addField(new ExtensionField(ScalarType.STRING, "base_abbr_name", 50014));
 			ext.homePackage = "extended-gpb-options";
 			protoSchema.extensions.add(ext);
 				
@@ -110,6 +113,8 @@ public class ProtobufModelFactory extends ModelFactory {
 			ext.addField(new ExtensionField("Version", "field_deprecated", 50004));
 			ext.addField(new ExtensionField(ScalarType.FIXED32, "group_tag", 50009));
 			ext.addField(new ExtensionField("Datatype", "type", 50010));
+			ext.addField(new ExtensionField(ScalarType.STRING, "abbr_name", 50011));
+			ext.addField(new ExtensionField(ScalarType.STRING, "base_abbr_name", 50012));
 			ext.homePackage = "fix";
 			protoSchema.extensions.add(ext);
 
@@ -192,6 +197,25 @@ public class ProtobufModelFactory extends ModelFactory {
 		
 		return protoSchema;
 	}
+
+	private boolean containsName(final List<EnumField> list, final String name) {
+		return list.stream().anyMatch(o -> Objects.equals(o.fieldName, name));
+	}
+
+	private List<EnumField> addEnumVal(final List<EnumField> list, final String name, final String s) {
+		// This function adds additional enum values to already existing fields for the case of when a proto can be one of multiple values
+		list.stream().filter(o -> Objects.equals(o.fieldName, name)).forEach(
+				o -> {
+					o.fieldOptions.stream().filter(a -> Objects.equals(a.name, "enum_value")).forEach(
+							a -> {
+								a.value += "," + s;
+							}
+					);
+				}
+		);
+
+		return list;
+	}
 		
 		private Enum buildEnum(CodeSetType codeSet) {
 			Enum protoEnum = new Enum();
@@ -232,9 +256,16 @@ public class ProtobufModelFactory extends ModelFactory {
 				}
 				if(codeType.getValue() != null) {
 					String s = codeType.getValue();
-					f.fieldOptions.add(new Option("enum_value", s, Option.ValueType.QUOTED_STRING));
+					// check if already added -- append to enum value if so
+					if(containsName(fields, f.fieldName)) {
+						fields = addEnumVal(fields, f.fieldName, s);
+					} else {
+						f.fieldOptions.add(new Option("enum_value", s, Option.ValueType.QUOTED_STRING));
+					}
 				}
-				fields.add(f);
+				if (!containsName(fields, f.fieldName)) {
+					fields.add(f);
+				}
 			}
 			FieldComparator fieldComparator = new FieldComparator(FieldComparator.SortOrder.NONE);
 			Collections.sort(fields, fieldComparator);
@@ -339,6 +370,9 @@ public class ProtobufModelFactory extends ModelFactory {
 				String s = numInGroup.getId().toString();
 				protoField.fieldOptions.add(new Option("group_tag", s, Option.ValueType.NUMERIC));
 			}
+			if (group.getAbbrName() != null) {
+				protoField.fieldOptions.add(new Option("abbr_name", group.getAbbrName(), Option.ValueType.QUOTED_STRING));
+			}
 			return protoField;
 		}
 		
@@ -364,6 +398,9 @@ public class ProtobufModelFactory extends ModelFactory {
 			if(componentRef.getDeprecated() != null) {
 				String s = toVersionFieldName(componentRef.getDeprecated());
 				protoField.fieldOptions.add(new Option("field_deprecated", s, Option.ValueType.ENUM_LITERAL));
+			}
+			if(component.getAbbrName() != null) {
+				protoField.fieldOptions.add(new Option("abbr_name", component.getAbbrName(), Option.ValueType.QUOTED_STRING));
 			}
 			return protoField;
 		}
@@ -431,7 +468,7 @@ public class ProtobufModelFactory extends ModelFactory {
 				}
 				else if(field.getType().equals("float")) {
 					protoField.fieldName = toProtoFieldName(getFieldName(fieldRef));
-					protoField.typeName = "Decimal32"; // this will depend on enc attrs
+					protoField.typeName = "Decimal64"; // this will depend on enc attrs
 					protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 					protoField.isRepeating = false;
 				}
@@ -449,19 +486,19 @@ public class ProtobufModelFactory extends ModelFactory {
 				}
 				else if(field.getType().equals("PriceOffset")) {
 					protoField.fieldName = toProtoFieldName(getFieldName(fieldRef));
-					protoField.typeName = "Decimal32"; // this will depend on enc attrs
+					protoField.typeName = "Decimal64"; // this will depend on enc attrs
 					protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 					protoField.isRepeating = false;
 				}
 				else if(field.getType().equals("Amt")) {
 					protoField.fieldName = toProtoFieldName(getFieldName(fieldRef));
-					protoField.typeName = "Decimal32"; // this will depend on enc attrs
+					protoField.typeName = "Decimal64"; // this will depend on enc attrs
 					protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 					protoField.isRepeating = false;
 				}
 				else if(field.getType().equals("Percentage")) {
 					protoField.fieldName = toProtoFieldName(getFieldName(fieldRef));
-					protoField.typeName = "Decimal32"; // this will depend on enc attrs
+					protoField.typeName = "Decimal64"; // this will depend on enc attrs
 					protoField.scalarOrEnumOrMsg = MessageField.ScalarOrEnumOrMsg.ProtoMsg;
 					protoField.isRepeating = false;
 				}
@@ -633,6 +670,12 @@ public class ProtobufModelFactory extends ModelFactory {
 				String s = fieldRef.getId().toString();
 				protoField.fieldOptions.add(new Option("tag", s, Option.ValueType.NUMERIC));
 			}
+			if (field.getAbbrName() != null) {
+				protoField.fieldOptions.add(new Option("abbr_name", field.getAbbrName(), Option.ValueType.QUOTED_STRING));
+			}
+			if (field.getBaseCategoryAbbrName() != null) {
+				protoField.fieldOptions.add(new Option("base_abbr_name", field.getBaseCategoryAbbrName(), Option.ValueType.QUOTED_STRING));
+			}
 			return protoField;
 		}
 
@@ -692,6 +735,12 @@ public class ProtobufModelFactory extends ModelFactory {
 					if(fieldRef.getId() != null) {
 						String s = fieldRef.getId().toString();
 						protoField.fieldOptions.add(new Option("tag", s, Option.ValueType.NUMERIC));
+					}
+					if (field.getAbbrName() != null) {
+						protoField.fieldOptions.add(new Option("abbr_name", field.getAbbrName(), Option.ValueType.QUOTED_STRING));
+					}
+					if (field.getBaseCategoryAbbrName() != null) {
+						protoField.fieldOptions.add(new Option("base_abbr_name", field.getBaseCategoryAbbrName(), Option.ValueType.QUOTED_STRING));
 					}
 				}
 				else {
